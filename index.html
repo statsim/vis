@@ -3,9 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>Port application</title>
+    <title>Vis. Visualize high-dimensional data | StatSim</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    <link type="text/css" rel="stylesheet" href="https://statsim.com/port/css/port.css" media="screen"/>
+    <link type="text/css" rel="stylesheet" href="http://localhost:8085/css/port.css" media="screen"/>
     <link rel="icon" type="image/png" href="https://statsim.com/app/images/favicon-32x32.png" sizes="32x32">
     <link rel="icon" type="image/png" href="https://statsim.com/app/images/favicon-16x16.png" sizes="16x16">
   </head>
@@ -14,31 +14,40 @@
       <div class="row">
         <div class="col m12">
           <a href="https://statsim.com/"><img src="https://statsim.com/app/images/favicon-96x96.png" alt="StatSim Logo" style="width:55px; height: 55px; margin-top: 20px;"></a>
-          <h3>Port application</h3>
-          <p>Description...</p>
+          <h3>Visualize high-dimensional data</h3>
         </div>
-      </div>
       <div id="port-container"></div>
+      </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    <script src="https://statsim.com/port/dist/port.js"></script>
+    <script src="http://localhost:8085/dist/port.js"></script>
     <script>
       var port = new Port({
         portContainer: document.getElementById('port-container'),
         schema: {
           "model": {
-            "type": "function",
-            "container": "args",
-            "autorun": true,
-            "worker": true
-            "url": "main.js",
-            "name": "main",
+            "name": "Vis",
+            "method": "run",
+            "type": "class",
+            "url": "vis.js",
+            "worker": false,
+          },
+          "design": {
+            "layout": "sidebar",
+            "colors": "light"
           },
           "inputs": [
-            { "type": "int", "name": "x" }
-          ],
-          "outputs": [
-            { "type": "int", "name": "y" }
+            { "type": "file", "name": "file", "reactive": true },
+            { "type": "select", "name": "dimensions", "options": [2, 3], "default": 3},
+            { "type": "select", "name": "column" },
+            { "type": "select", "name": "method", "options": ['PCA', 't-SNE'], "default": "PCA", "onchange": (value) => {
+              if (value === 'PCA') {
+                return {'steps': {'className': 'hidden'}}
+              } else {
+                return {'steps': {'className': ''}}
+              }
+            }},
+            { "type": "int", "name": "steps", "default": 100}
           ]
         }
       })

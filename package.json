@@ -1,0 +1,35 @@
+{
+  "name": "vis",
+  "version": "0.0.1",
+  "description": "Visualize high-dimensional data",
+  "main": "main.js",
+  "scripts": {
+    "build": "browserify src/main.js -s Vis | uglifyjs -cm > vis.js",
+    "build-dev": "browserify src/main.js -s Vis > vis.js",
+    "watch": "nodemon --watch src --ext js,css,html --exec 'npm run build-dev'",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/statsim/vis.git"
+  },
+  "author": "Anton Zemlyansky",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/statsim/vis/issues"
+  },
+  "homepage": "https://github.com/statsim/vis#readme",
+  "devDependencies": {
+    "browserify": "^16.5.1",
+    "nodemon": "^2.0.3",
+    "uglify-es": "^3.3.9"
+  },
+  "dependencies": {
+    "csv-parse": "^4.8.8",
+    "dygraphs": "^2.1.0",
+    "ml-matrix": "^6.4.1",
+    "ml-pca": "^4.0.1",
+    "plotly.js-dist": "^1.53.0",
+    "tsne": "^1.0.1"
+  }
+}
