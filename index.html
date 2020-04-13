@@ -49,7 +49,7 @@
           },
           "inputs": [
             { "type": "file", "name": "file", "reactive": true },
-            { "type": "select", "name": "dimensions", "options": [2, 3], "default": 3},
+            { "type": "select", "name": "dimensions", "options": [2, 3], "default": 2},
             { "type": "select", "name": "column" },
             { "type": "select", "name": "transform", "options": ['None', 'Scale', 'Log'], "default": 'None' },
             { "type": "select", "name": "method", "options": ['PCA', 't-SNE', 'UMAP'], "default": "PCA", "onchange": (value) => {
@@ -59,7 +59,7 @@
                 return {'steps': {'className': ''}}
               }
             }},
-            { "type": "int", "name": "steps", "default": 100},
+            { "type": "int", "name": "steps", "default": 200},
           ]
         }
       })
