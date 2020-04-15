@@ -37,11 +37,17 @@
         portContainer: document.getElementById('port-container'),
         schema: {
           "model": {
-            "name": "Vis",
+            "name": "Process",
             "method": "run",
             "type": "class",
-            "url": "vis.js",
-            "worker": false,
+            "url": "process.js",
+            "worker": true,
+          },
+          "render": {
+            "name": "Render",
+            "method": "render",
+            "type": "class",
+            "url": "render.js"
           },
           "design": {
             "layout": "sidebar",
@@ -52,7 +58,7 @@
             { "type": "select", "name": "dimensions", "options": [2, 3], "default": 2},
             { "type": "select", "name": "column" },
             { "type": "select", "name": "transform", "options": ['None', 'Scale', 'Log'], "default": 'None' },
-            { "type": "select", "name": "method", "options": ['PCA', 't-SNE', 'UMAP'], "default": "PCA", "onchange": (value) => {
+            { "type": "select", "name": "method", "options": ['PCA', 'SOM', 't-SNE', 'UMAP', 'Autoencoder'], "default": "PCA", "onchange": (value) => {
               if (value === 'PCA') {
                 return {'steps': {'className': 'hidden'}}
               } else {
