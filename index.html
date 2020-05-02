@@ -8,28 +8,60 @@
     <link type="text/css" rel="stylesheet" href="https://statsim.com/port/css/port.css" media="screen"/>
     <link rel="icon" type="image/png" href="https://statsim.com/app/images/favicon-32x32.png" sizes="32x32">
     <link rel="icon" type="image/png" href="https://statsim.com/app/images/favicon-16x16.png" sizes="16x16">
+    <style>
+      a { color: #3030B7 }
+      .btn, .port-btn { background: #3030B7 }
+      .btn:hover, .port-btn:hover { background: #21218B }
+      .file-field .btn { background: #BBB }
+      .file-field .btn:hover { background: #AAA }
+      .status-bar { background: #f5f5f5 }
+      .spinner-green, .spinner-green-only { border-color: #3030B7 }
+    </style>
   </head>
   <body>
-    <div class="container">
-      <div class="row">
-        <div class="col m12">
-          <a href="https://statsim.com/"><img src="https://statsim.com/app/images/favicon-96x96.png" alt="StatSim Logo" style="width:45px; height: 45px; margin-top: 15px;"></a>
-          <h4>Visualize high-dimensional data</h4>
-          <p>Feature extraction is the process of reducing the number of variables (columns) in a dataset by obtaining a smaller representative set of variables using various methods of dimensionality reduction (<a href="https://en.wikipedia.org/wiki/Dimensionality_reduction">Wiki</a>). Try dimensionality reduction methods in the browser using Vis, a 100% free open-source tool for feature extraction and visualization.</p>
-          <p>Currently supported methods: <i>PCA, t-SNE, UMAP</i></p>
-        </div>
-        <div id="port-container"></div>
-        <div>
-          <small>
-            All processing and visualization happens in your browser. We don't see, collect or sell data you load <br> Based on awesome npm packages: 
-            <a href="https://www.npmjs.com/package/ml-js">ml-js</a>, 
-            <a href="https://www.npmjs.com/package/tsne">tsne</a>, 
-            <a href="https://www.npmjs.com/package/umap-js">umap-js</a>, 
-            <a href="https://www.npmjs.com/package/plotly.js">plotly.js</a> and other
-          </small>
+
+    <div class="status-bar">
+      <div class="container">
+        <div class="row">
+          <div class="col s11" style="font-size: 14px;">
+            <a href="https://statsim.com/">StatSim</a> → Vis
+          </div>
+          <div class="col s1" style="font-size: 13px; color: #AAA; text-align: right">
+            0.2.0
+          </div>
         </div>
       </div>
     </div>
+
+    <div class="container">
+      <div class="row">
+        <div class="col m12">
+          <h4>Visualize high-dimensional data</h4>
+          <p>Feature extraction is the process of reducing the number of variables (columns) in a dataset by obtaining a smaller representative set of variables using various methods of dimensionality reduction (<a href="https://en.wikipedia.org/wiki/Dimensionality_reduction">Wiki</a>). Try dimensionality reduction methods in the browser using Vis, a 100% free open-source tool for feature extraction and visualization.</p>
+          <p>Currently supported methods: <i>PCA, t-SNE, UMAP, SOM, Autoencoder</i></p>
+        </div>
+      </div>
+      <div class="row">
+        <div id="port-container"></div>
+      </div>
+      <div class="row">
+        <div class="col m12">
+          <small>
+            All processing and visualization happens in your browser. We don't see, collect or sell data you explore <br> 
+            Based on <a href="https://github.com/statsim/port">port</a> and some awesome npm packages: 
+            <a href="https://www.npmjs.com/package/ml-js">ml-js</a>, 
+            <a href="https://www.npmjs.com/package/tsne">tsne</a>, 
+            <a href="https://www.npmjs.com/package/umap-js">umap-js</a>, 
+            <a href="https://www.npmjs.com/package/plotly.js">plotly.js</a> and <a href="https://github.com/statsim/vis/blob/master/package.json">other</a>
+          </small>
+          <p>
+            <a class="github-button" href="https://github.com/statsim/vis" data-icon="octicon-star" data-show-count="true" aria-label="Star statsim/vis on GitHub">Star</a>
+            <a class="github-button" href="https://github.com/statsim/vis/issues" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue statsim/vis on GitHub">Issue</a>
+          </p>
+        </div>
+      </div>
+    </div>
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <script src="https://statsim.com/port/dist/port.js"></script>
     <script>
@@ -54,18 +86,19 @@
             "colors": "light"
           },
           "inputs": [
-            { "type": "file", "name": "file", "reactive": true },
-            { "type": "select", "name": "dimensions", "options": [2, 3], "default": 2},
-            { "type": "select", "name": "column" },
-            { "type": "select", "name": "transform", "options": ['None', 'Scale', 'Log'], "default": 'None' },
-            { "type": "select", "name": "method", "options": ['PCA', 'SOM', 't-SNE', 'UMAP', 'Autoencoder'], "default": "PCA", "onchange": (value) => {
+            { "type": "file", "name": "File", "reactive": true },
+            { "type": "select", "name": "Dimensions", "options": [2, 3], "default": 2},
+            { "type": "select", "name": "Target variable" },
+            { "type": "select", "name": "Transform", "options": ['None', 'Scale', 'Log'], "default": 'None' },
+            { "type": "select", "name": "Method", "options": ['PCA', 'SOM', 't-SNE', 'UMAP', 'Autoencoder'], "default": "PCA", "onchange": (value) => {
               if (value === 'PCA') {
-                return {'steps': {'className': 'hidden'}}
+                return {'Steps': {'className': 'hidden'}}
               } else {
-                return {'steps': {'className': ''}}
+                return {'Steps': {'className': ''}}
               }
             }},
-            { "type": "int", "name": "steps", "default": 200},
+            { "type": "select", "name": "Feature importance", "options": ['None', 'Random Forest'], "default": 'None' },
+            { "type": "int", "name": "Steps", "default": 200},
           ]
         }
       })

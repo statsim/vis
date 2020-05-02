@@ -1,7 +1,7 @@
 {
   "name": "vis",
-  "version": "0.0.2",
-  "description": "Visualize high-dimensional data",
+  "version": "0.2.0",
+  "description": "Vis. Visualize high-dimensional data",
   "main": "main.js",
   "scripts": {
     "build": "browserify src/process.js -s Process | uglifyjs -cm > process.js && browserify src/render.js -s Render | uglifyjs -cm > render.js",
@@ -27,10 +27,12 @@
   "dependencies": {
     "autoencoder": "0.0.1",
     "csv-parse": "^4.8.8",
+    "file-saver": "^2.0.2",
     "ml-matrix": "^6.4.1",
     "ml-pca": "^4.0.1",
     "ml-som": "0.0.6",
     "plotly.js": "^1.53.0",
+    "random-forest": "0.0.7",
     "tsne": "^1.0.1",
     "umap-js": "^1.3.2"
   }

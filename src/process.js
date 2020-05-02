@@ -1,11 +1,12 @@
 // const Dygraph = require('dygraphs')
 const TSNE = require('tsne').tSNE
-const {Matrix, correlation} = require('ml-matrix')
+const { Matrix, correlation } = require('ml-matrix')
 const PCA = require('ml-pca').PCA
 const SOM = require('ml-som')
 const UMAP = require('umap-js').UMAP
 const Autoencoder = require('autoencoder')
 const parse = require('csv-parse/lib/sync')
+const { RandomForest } = require('random-forest')
 
 module.exports = class Process {
   constructor () {
@@ -13,13 +14,23 @@ module.exports = class Process {
     this.records = []
     this.keys = []
   }
-  run (params) {
+
+  run (p) {
+    const params = {
+      file: p['File'],
+      dimensions: p['Dimensions'],
+      column: p['Target variable'],
+      transform: p['Transform'],
+      method: p['Method'],
+      steps: p['Steps'],
+      importance: p['Feature importance']
+    }
     if (!params.file && !this.file.length) {
       console.log('[Vis] No file provided')
       throw new Error('No file selected')
     } else if (params.file !== this.file) {
       // New file, return columns
-      console.log('[Vis] Parse file', params.file)
+      console.log('[Vis] Parsing the file')
       this.file = params.file
       this.records = parse(params.file, {
         columns: true,
@@ -27,8 +38,8 @@ module.exports = class Process {
       })
       this.keys = Object.keys(this.records[0]).filter(key => key.length)
       return {
-        'column': {
-          'options': ['None'].concat(this.keys)
+        'Target variable': {
+          options: ['None'].concat(this.keys)
         }
       }
     } else {
@@ -40,11 +51,12 @@ module.exports = class Process {
       const featuresFiltered = []
 
       // Remove columns with many NaNs
+      console.log('[Vis] Transforming data')
       const cols = []
       for (let i = 0; i < Xraw.columns; i++) {
-        let col = Xraw.getColumn(i)
-        let na = col.reduce((a, x) => a + isNaN(x), 0)
-        console.log('[Vis] Feature:', features[i], na, 100 * na / len + '%')
+        const col = Xraw.getColumn(i)
+        const na = col.reduce((a, x) => a + isNaN(x), 0)
+        console.log('[Vis] Number of NaNs in the variable:', features[i], na, 100 * na / len + '%')
         if (na < len / 10) {
           cols.push(i)
           featuresFiltered.push(features[i])
@@ -68,17 +80,19 @@ module.exports = class Process {
       // Remove rows with NaN
       const rows = []
       for (let i = 0; i < len; i++) {
-        let row = X.getRow(i)
-        let na = row.reduce((a, x) => a + isNaN(x), 0)
+        const row = X.getRow(i)
+        const na = row.reduce((a, x) => a + isNaN(x), 0)
         if (na === 0) {
           rows.push(i)
         }
       }
       X = X.subMatrixRow(rows)
+      const recordsFiltered = this.records.filter((_, ri) => rows.includes(ri))
+
+      // Compute correlation
+      const corr = correlation(new Matrix(X)).to2DArray()
 
       // Convert X to a native 2d array
-      let corr = correlation(X).to2DArray()
-
       X = X.to2DArray()
 
       console.log('[Vis] Target variable:', params.column ? params.column : 'None')
@@ -91,9 +105,9 @@ module.exports = class Process {
       if (params.method === 'PCA') {
         console.log('[Vis] Fitting PCA')
         const pca = new PCA(X)
-        Y = pca.predict(X, {'nComponents': nDims}).to2DArray()
+        Y = pca.predict(X, { 'nComponents': nDims}).to2DArray()
       } else if (params.method === 'SOM') {
-        const som = new SOM(100, 100, {'iterations': Math.round(params.steps / 10), 'fields': X[0].length})
+        const som = new SOM(100, 100, { 'iterations': Math.round(params.steps / 10), 'fields': X[0].length})
         som.train(X)
         Y = som.predict(X)
         if (nDims === 3) {
@@ -101,7 +115,7 @@ module.exports = class Process {
         }
       } else if (params.method === 'UMAP') {
         console.log('[Vis] Fitting UMAP')
-        const umap = new UMAP({'nComponents': nDims, 'nEpochs': params.steps})
+        const umap = new UMAP({ 'nComponents': nDims, 'nEpochs': params.steps })
         umap.initializeFit(X)
         for (let i = 0; i < params.steps; i++) {
           umap.step()
@@ -129,6 +143,7 @@ module.exports = class Process {
         Y = ae.encode(X)
 
         var impMatrix = []
+        console.log('[Vis] Generate importance matrix with Autoencoder')
         featuresFiltered.forEach((f, fi) => {
           const imp = []
           const Xr = []
@@ -146,10 +161,11 @@ module.exports = class Process {
           })
           impMatrix.push(imp)
         })
-        console.log(impMatrix)
+        console.log('[Vis] Autoencoder importance matrix:', impMatrix)
         impMatrix = new Matrix(impMatrix).scaleColumns().to2DArray()
       } else {
-        const tsne = new TSNE({'epsilon': 10, 'dim': nDims})
+        console.log('[Vis] Fitting t-SNE')
+        const tsne = new TSNE({ 'epsilon': 10, 'dim': nDims })
         tsne.initDataRaw(X)
         const steps = params.steps || 100
         for (let k = 0; k <= steps; k++) {
@@ -161,11 +177,13 @@ module.exports = class Process {
       let target
       let colorscale
       let g
+      let imp
 
       if (params.column && params.column.length && (params.column !== 'None')) {
+        console.log('[Vis] Target variable is present')
         g = this.records.map(row => row[params.column]).filter((_, i) => rows.includes(i))
         const groups = [...new Set(g)].sort((a, b) => a > b)
-        console.log('[Vis] Groups:', groups, g.length, Y.length)
+        console.log('[Vis] Number of unique values: %d%', X.length ? g.length / X.length : 0)
         target = g.map((group, i) => groups.findIndex(el => el === group) / (groups.length > 2 ? groups.length - 1 : 1))
         colorscale = [
           [0.0, '#d90368'],
@@ -174,7 +192,21 @@ module.exports = class Process {
           [0.75, '#119ddd'],
           [1, '#2f2fb7']
         ]
+
+        if (params.importance === 'Random Forest') {
+          console.log('[Vis] Fitting random forest')
+          const rf = new RandomForest({
+            nEstimators: 50,
+            maxDepth: 10,
+            maxFeatures: 'auto'
+          })
+          rf.train(X, g)
+          imp = rf.getFeatureImportances(X, g, { n: 3, means: true, verbose: true })
+          console.log('[Vis] Trained random forest:', rf)
+          console.log('[Vis] Importance:', imp)
+        }
       } else {
+        console.log('[Vis] No target variable specified')
         target = Array(Y.length).fill(0)
         colorscale = [
           [0, '#8A8DA1'],
@@ -182,7 +214,7 @@ module.exports = class Process {
         ]
       }
 
-      return {Y, X, params, nDims, featuresFiltered, target, g, colorscale, impMatrix, corr}
+      return {Y, X, params, nDims, featuresFiltered, recordsFiltered, target, g, colorscale, impMatrix, corr, imp}
     }
   }
 }

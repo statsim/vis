@@ -1,3 +1,4 @@
+const FileSaver = require('file-saver')
 const Plotly = require('./plotly-custom.js')
 
 function unpack (rows, key) {
@@ -12,11 +13,23 @@ module.exports = class Render {
     this.divPlot.style.maxWidth = '600px'
     this.outputs.appendChild(this.divPlot)
 
+    this.divImp = document.createElement('div')
+    this.divImp.style.width = '100%'
+    this.divImp.style.maxWidth = '600px'
+    this.divImp.style.marginTop = '30px'
+    this.outputs.appendChild(this.divImp)
+
     this.divPair = document.createElement('div')
     this.divPair.style.width = '100%'
     this.divPair.style.maxWidth = '600px'
     this.divPair.style.marginTop = '30px'
     this.outputs.appendChild(this.divPair)
+
+    this.divCoord = document.createElement('div')
+    this.divCoord.style.width = '100%'
+    this.divCoord.style.maxWidth = '600px'
+    this.divCoord.style.marginTop = '30px'
+    this.outputs.appendChild(this.divCoord)
 
     this.divCorr = document.createElement('div')
     this.divCorr.style.width = '100%'
@@ -32,7 +45,8 @@ module.exports = class Render {
   }
 
   render (data) {
-    const {Y, X, params, nDims, featuresFiltered, target, g, colorscale, impMatrix, corr} = data
+    console.log('[Render] Starting...')
+    const { Y, X, params, nDims, featuresFiltered, recordsFiltered, target, g, colorscale, impMatrix, corr, imp } = data
 
     /*
     if (!this.outputs.innerText.length) {
@@ -54,7 +68,7 @@ module.exports = class Render {
     })
 
     if (nDims === 2) {
-      let trace = {
+      const trace = {
         x: unpack(Y, 0),
         y: unpack(Y, 1),
         mode: 'markers',
@@ -67,8 +81,8 @@ module.exports = class Render {
         text: text,
         type: 'scatter'
       }
-      let data = [ trace ]
-      let layout = {
+      const data = [trace]
+      const layout = {
         title: params.method + '(2D)',
         hovermode: 'closest',
         height: 600,
@@ -76,12 +90,24 @@ module.exports = class Render {
           l: 0,
           r: 0,
           b: 0,
-          t: 40
+          t: 30
         }
       }
-      Plotly.newPlot(this.divPlot, data, layout, {responsive: true})
+      Plotly.newPlot(this.divPlot, data, layout, { responsive: true })
+      this.divPlot.on('plotly_selected', function (e) {
+        if (e && e.points && Array.isArray(e.points)) {
+          const selected = e.points.map(p => p.pointIndex)
+          const recordsSelected = recordsFiltered.filter((_, i) => selected.includes(i))
+          const keys = Object.keys(recordsSelected[0]).filter(key => key.length)
+          const values = recordsSelected.map(row => keys.map(k => row[k]))
+          let res = keys.join(',') + '\n'
+          values.forEach(v => { res += v.join(',') + '\n' })
+          const blob = new Blob([res], { type: 'text/plain;charset=utf-8' })
+          FileSaver.saveAs(blob, 'selection.csv')
+        }
+      })
     } else {
-      let trace = {
+      const trace = {
         x: unpack(Y, 0),
         y: unpack(Y, 1),
         z: unpack(Y, 2),
@@ -95,8 +121,8 @@ module.exports = class Render {
         text: g && g.length ? g.map(el => '<b>' + el + '</b>') : null,
         type: 'scatter3d'
       }
-      let data = [trace]
-      let layout = {
+      const data = [trace]
+      const layout = {
         title: params.method + '(3D)',
         hovermode: 'closest',
         height: 600,
@@ -104,24 +130,70 @@ module.exports = class Render {
           l: 0,
           r: 0,
           b: 0,
-          t: 40
+          t: 30
         }
       }
-      Plotly.newPlot(this.divPlot, data, layout, {responsive: true})
+      Plotly.newPlot(this.divPlot, data, layout, { responsive: true })
     }
 
-    // Plot pairs
-    if (featuresFiltered && (featuresFiltered.length < 10)) {
-      let axis = () => ({
-        'showline': false,
-        'zeroline': false,
-        // 'gridcolor': '#ffff',
-        'ticklen': 4
+    // Plot pairs and parallel coordinated plot
+    if ((featuresFiltered && (featuresFiltered.length <= 5)) || imp) {
+      // Parallel coords
+      const dims = featuresFiltered
+        .map((name, i) => ({
+          imp: imp[i] || 1,
+          label: name,
+          values: unpack(X, i)
+        }))
+        .sort((a, b) => a.imp - b.imp)
+        .slice(-5)
+        .map(c => ({
+          label: c.label,
+          values: c.values
+        }))
+
+      const coordData = [{
+        type: 'parcoords',
+        // pad: [80, 80, 80, 80],
+        line: {
+          showscale: true,
+          color: target,
+          colorscale
+        },
+        dimensions: dims
+        /*
+        dimensions: featuresFiltered.map((f, i) => {
+          const col = unpack(X, i)
+          return {
+            label: f,
+            values: col,
+            // range: [Math.min.apply(null, col), Math.max.apply(null, col)]
+          }
+        })
+        */
+      }]
+      const coordLayout = {
+        // width: 800
+        title: 'Parallel Coordinates' + (dims.length < featuresFiltered.length ? ' (Top ' + dims.length + ' features)' : ''),
+        height: 420,
+        margin: {
+          l: 50,
+          r: 5,
+          b: 5,
+          t: 120
+        }
+      }
+      Plotly.newPlot(this.divCoord, coordData, coordLayout)
+
+      // Pair plot
+      const axis = () => ({
+        showline: false,
+        zeroline: false,
+        ticklen: 4
       })
-      let splomDimensions = featuresFiltered.map((f, i) => ({'label': f, 'values': unpack(X, i)}))
-      let data = [{
+      const data = [{
         type: 'splom',
-        dimensions: splomDimensions,
+        dimensions: dims,
         text: g && g.length ? g.map(el => '<b>' + el + '</b>') : null,
         marker: {
           color: target,
@@ -131,15 +203,15 @@ module.exports = class Render {
         }
       }]
 
-      let layout = {
-        title: 'Pair plot',
+      const layout = {
+        title: 'Pair plot' + (dims.length < featuresFiltered.length ? ' (Top ' + dims.length + ' features)' : ''),
         hovermode: 'closest',
         height: 600,
         margin: {
-          l: 0,
+          l: 50,
           r: 0,
-          b: 0,
-          t: 40
+          b: 50,
+          t: 30
         },
         xaxis: axis(),
         yaxis: axis(),
@@ -151,7 +223,7 @@ module.exports = class Render {
         yaxis4: axis()
       }
 
-      Plotly.newPlot(this.divPair, data, layout, {responsive: true})
+      Plotly.newPlot(this.divPair, data, layout, { responsive: true })
     } else {
       this.divPair.innerHTML = ''
     }
@@ -174,11 +246,18 @@ module.exports = class Render {
         }
       ]
       let layout = {
-        title: 'AE importance',
+        title: 'Cross-variable importance (Autoencoder)',
         height: 600,
+        margin: {
+          l: 50,
+          r: 0,
+          b: 100,
+          t: 30
+        },
         xaxis: {
           ticks: '',
-          side: 'top'
+          tickangle: -45,
+          side: 'bottom'
         },
         yaxis: {
           ticks: '',
@@ -200,11 +279,18 @@ module.exports = class Render {
         }
       ]
       let layout = {
-        title: 'Correlation',
+        title: 'Correlation (All variables)',
         height: 600,
+        margin: {
+          l: 50,
+          r: 0,
+          b: 100,
+          t: 30
+        },
         xaxis: {
           ticks: '',
-          side: 'top'
+          tickangle: -45,
+          side: 'bottom'
         },
         yaxis: {
           ticks: '',
@@ -212,6 +298,46 @@ module.exports = class Render {
         }
       }
       Plotly.newPlot(this.divCorr, data, layout)
+    }
+
+    if (imp) {
+      const impMax = Math.max.apply(null, imp)
+      const imps = imp.map((v, i) => ({
+        imp: v / (impMax || 1),
+        name: featuresFiltered[i]
+      })).sort((a, b) => a.imp - b.imp)
+      const colors = imps.map((v, i) => /* v.imp < 0.5 */ i < imps.length - 5 ? '#BBB' : '#3030B7')
+      const traceImp = {
+        x: imps.map(v => v.name),
+        y: imps.map(v => v.imp),
+        type: 'bar',
+        // text: imp,
+        marker: {
+          color: colors,
+          opacity: 0.8
+        }
+      }
+      const data = [traceImp]
+      const layout = {
+        title: 'Feature Importance (RF)',
+        showlegend: false,
+        height: 400,
+        margin: {
+          l: 50,
+          r: 0,
+          b: 80,
+          t: 30
+        },
+        xaxis: {
+          tickangle: -45
+        },
+        yaxis: {
+          zeroline: false,
+          gridwidth: 1
+        },
+        bargap: 0.05
+      }
+      Plotly.newPlot(this.divImp, data, layout)
     }
   }
 }
