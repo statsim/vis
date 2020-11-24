@@ -21,7 +21,7 @@ module.exports = class Process {
       dimensions: p['Dimensions'],
       column: p['Target variable'],
       transform: p['Transform'],
-      method: p['Method'],
+      method: p['Projection method'],
       steps: p['Steps'],
       importance: p['Feature importance']
     }
@@ -49,6 +49,9 @@ module.exports = class Process {
       const features = this.keys.filter(k => (k !== params.column) && k.length)
       const Xraw = new Matrix(this.records.map(row => features.map(f => row[f])))
       const featuresFiltered = []
+
+      let imp
+      let impMatrix
 
       // Remove columns with many NaNs
       console.log('[Vis] Transforming data')
@@ -142,10 +145,11 @@ module.exports = class Process {
         })
         Y = ae.encode(X)
 
-        var impMatrix = []
+        impMatrix = []
+
         console.log('[Vis] Generate importance matrix with Autoencoder')
         featuresFiltered.forEach((f, fi) => {
-          const imp = []
+          const impTemp = []
           const Xr = []
           X.forEach(x => Xr.push(x.slice(0)))
           for (let i = Xr.length - 1; i > 0; i--) {
@@ -157,9 +161,9 @@ module.exports = class Process {
           const Xp = ae.predict(Xr)
           featuresFiltered.forEach((ff, ffi) => {
             const mse = Xp.reduce((a, x, xi) => Math.pow(x[ffi] - X[xi][ffi], 2) + a, 0) / Xp.length
-            imp.push(mse)
+            impTemp.push(mse)
           })
-          impMatrix.push(imp)
+          impMatrix.push(impTemp)
         })
         console.log('[Vis] Autoencoder importance matrix:', impMatrix)
         impMatrix = new Matrix(impMatrix).scaleColumns().to2DArray()
@@ -177,7 +181,6 @@ module.exports = class Process {
       let target
       let colorscale
       let g
-      let imp
 
       if (params.column && params.column.length && (params.column !== 'None')) {
         console.log('[Vis] Target variable is present')
@@ -212,9 +215,29 @@ module.exports = class Process {
           [0, '#8A8DA1'],
           [1, '#8A8DA1']
         ]
+
+        if (params.importance === 'Random Forest') {
+          console.log('[Vis] Fitting random forest on all variables')
+          console.log(X, featuresFiltered, featuresFiltered.length)
+          impMatrix = featuresFiltered.map((f, i) => {
+            console.log(`Calculating ${i} of ${featuresFiltered.length}: ${f}`)
+            const Xtemp = X.map(row => row.filter((_, j) => j !== i))
+            const gtemp = X.map(row => row.filter((_, j) => j === i))
+            const rf = new RandomForest({
+              nEstimators: 50,
+              maxDepth: 5,
+              maxFeatures: 'auto'
+            })
+            rf.train(Xtemp, gtemp)
+            const impTemp = rf.getFeatureImportances(Xtemp, gtemp, { n: 3, means: true, verbose: false })
+            // Add importance of the target feature on itself
+            impTemp.splice(i, 0, 0)
+            return impTemp
+          })
+        }
       }
 
-      return {Y, X, params, nDims, featuresFiltered, recordsFiltered, target, g, colorscale, impMatrix, corr, imp}
+      return { Y, X, params, nDims, featuresFiltered, recordsFiltered, target, g, colorscale, impMatrix, corr, imp }
     }
   }
 }
