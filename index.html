@@ -10,17 +10,18 @@
     <link rel="icon" type="image/png" href="https://statsim.com/app/images/favicon-16x16.png" sizes="16x16">
     <style>
       a { color: #3030B7 }
+      .logo { width: 75px; padding: 0; margin: 8px 0 0 0}
       .btn, .port-btn { background: #3030B7 }
       .btn:hover, .port-btn:hover { background: #21218B }
       .file-field .btn { background: #BBB }
       .file-field .btn:hover { background: #AAA }
-      .status-bar { background: #f5f5f5 }
+      .grey-bar { background: #f5f5f5 }
       .spinner-green, .spinner-green-only { border-color: #3030B7 }
     </style>
   </head>
   <body>
 
-    <div class="status-bar">
+    <div class="grey-bar">
       <div class="container">
         <div class="row">
           <div class="col s11" style="font-size: 14px;">
@@ -36,28 +37,31 @@
     <div class="container">
       <div class="row">
         <div class="col m12">
-          <h4>Visualize high-dimensional data</h4>
-          <p>Feature extraction is the process of reducing the number of variables (columns) in a dataset by obtaining a smaller representative set of variables using various methods of dimensionality reduction (<a href="https://en.wikipedia.org/wiki/Dimensionality_reduction">Wiki</a>). Try dimensionality reduction methods in the browser using Vis, a 100% free open-source tool for feature extraction and visualization.</p>
-          <p>Currently supported methods: <i>PCA, t-SNE, UMAP, SOM, Autoencoder</i></p>
+          <img src="vis.png" class="logo" alt="StatSim.Vis">
         </div>
       </div>
       <div class="row">
         <div id="port-container"></div>
       </div>
-      <div class="row">
-        <div class="col m12">
-          <small>
-            All processing and visualization happens in your browser. We don't see, collect or sell data you explore <br> 
-            Based on <a href="https://github.com/statsim/port">port</a> and some awesome npm packages: 
-            <a href="https://www.npmjs.com/package/ml-js">ml-js</a>, 
-            <a href="https://www.npmjs.com/package/tsne">tsne</a>, 
-            <a href="https://www.npmjs.com/package/umap-js">umap-js</a>, 
-            <a href="https://www.npmjs.com/package/plotly.js">plotly.js</a> and <a href="https://github.com/statsim/vis/blob/master/package.json">other</a>
-          </small>
-          <p>
-            <a class="github-button" href="https://github.com/statsim/vis" data-icon="octicon-star" data-show-count="true" aria-label="Star statsim/vis on GitHub">Star</a>
-            <a class="github-button" href="https://github.com/statsim/vis/issues" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue statsim/vis on GitHub">Issue</a>
-          </p>
+    </div>
+    <div class="grey-bar">
+      <div class="container">
+        <div class="row">
+          <div class="col m12">
+            <h4>Visualize high-dimensional data online</h4>
+            <p>
+              Feature extraction is the process of reducing the number of variables (columns) in a dataset by obtaining a smaller representative set of variables using various methods of dimensionality reduction (<a href="https://en.wikipedia.org/wiki/Dimensionality_reduction">Wiki</a>). Try dimensionality reduction methods in the browser using Vis, a 100% free open-source tool for feature extraction and visualization.
+              Supported methods: <i>PCA, t-SNE, UMAP, SOM, Autoencoder</i>
+            </p>
+
+            <small>
+              All processing and visualization happens in your browser. We don't see, collect or sell data you explore <br> 
+            </small>
+            <p>
+              <a class="github-button" href="https://github.com/statsim/vis" data-icon="octicon-star" data-show-count="true" aria-label="Star statsim/vis on GitHub">Star</a>
+              <a class="github-button" href="https://github.com/statsim/vis/issues" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue statsim/vis on GitHub">Issue</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -87,18 +91,32 @@
           },
           "inputs": [
             { "type": "file", "name": "File", "reactive": true },
-            { "type": "select", "name": "Dimensions", "options": [2, 3], "default": 2},
-            { "type": "select", "name": "Target variable" },
-            { "type": "select", "name": "Transform", "options": ['None', 'Scale', 'Log'], "default": 'None' },
-            { "type": "select", "name": "Method", "options": ['PCA', 'SOM', 't-SNE', 'UMAP', 'Autoencoder'], "default": "PCA", "onchange": (value) => {
-              if (value === 'PCA') {
-                return {'Steps': {'className': 'hidden'}}
+            { "type": "select", "name": "Target variable", "options": ['None'], "default": 'None' },
+            { "type": "select", "name": "Projection method", "options": ['None', 'PCA', 'SOM', 't-SNE', 'UMAP', 'Autoencoder'], "default": "None", "onchange": (value) => {
+              if (value === 'None') {
+                return {
+                  'Steps': {'className': 'hidden'},
+                  'Dimensions': {'className': 'hidden'},
+                  'Transform': {'className': 'hidden'}
+                }
+              } else if (value === 'PCA') {
+                return {
+                  'Steps': {'className': 'hidden'},
+                  'Dimensions': {'className': ''},
+                  'Transform': {'className': ''}
+                }
               } else {
-                return {'Steps': {'className': ''}}
+                return {
+                  'Steps': {'className': ''},
+                  'Dimensions': {'className': ''},
+                  'Transform': {'className': ''}
+                }
               }
             }},
-            { "type": "select", "name": "Feature importance", "options": ['None', 'Random Forest'], "default": 'None' },
+            { "type": "select", "name": "Dimensions", "options": [2, 3], "default": 2},
+            { "type": "select", "name": "Transform", "options": ['None', 'Scale', 'Log'], "default": 'None' },
             { "type": "int", "name": "Steps", "default": 200},
+            { "type": "select", "name": "Feature importance", "options": ['None', 'Random Forest'], "default": 'None' },
           ]
         }
       })

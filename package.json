@@ -1,6 +1,6 @@
 {
   "name": "vis",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Vis. Visualize high-dimensional data",
   "main": "main.js",
   "scripts": {
@@ -34,6 +34,7 @@
     "plotly.js": "^1.53.0",
     "random-forest": "0.0.7",
     "tsne": "^1.0.1",
-    "umap-js": "^1.3.2"
+    "umap-js": "^1.3.2",
+    "vis-network": "^8.5.4"
   }
 }

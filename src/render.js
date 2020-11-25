@@ -1,5 +1,8 @@
 const FileSaver = require('file-saver')
 const Plotly = require('./plotly-custom.js')
+const vis = require('./vn.js')
+
+console.log(vis)
 
 function unpack (rows, key) {
   return rows.map(row => row[key])
@@ -42,11 +45,21 @@ module.exports = class Render {
     this.divMap.style.maxWidth = '600px'
     this.divMap.style.marginTop = '30px'
     this.outputs.appendChild(this.divMap)
+
+    this.divNet = document.createElement('div')
+    this.divNet.style.width = '100%'
+    this.divNet.style.maxWidth = '600px'
+    this.divNet.style.marginTop = '30px'
+    this.outputs.appendChild(this.divNet)
   }
 
   render (data) {
     console.log('[Render] Starting...')
     const { Y, X, params, nDims, featuresFiltered, recordsFiltered, target, g, colorscale, impMatrix, corr, imp } = data
+
+    ;[this.divPlot, this.divImp, this.divPair, this.divCoord, this.divCorr, this.divMap, this.divNet].forEach(e => {
+      e.innerHTML = ''
+    })
 
     /*
     if (!this.outputs.innerText.length) {
@@ -67,73 +80,76 @@ module.exports = class Render {
       return label
     })
 
-    if (nDims === 2) {
-      const trace = {
-        x: unpack(Y, 0),
-        y: unpack(Y, 1),
-        mode: 'markers',
-        marker: {
-          size: 6,
-          opacity: 0.7,
-          color: target,
-          colorscale: colorscale
-        },
-        text: text,
-        type: 'scatter'
-      }
-      const data = [trace]
-      const layout = {
-        title: params.method + '(2D)',
-        hovermode: 'closest',
-        height: 600,
-        margin: {
-          l: 0,
-          r: 0,
-          b: 0,
-          t: 30
+    // Plot projection
+    if (Y) {
+      if (nDims === 2) {
+        const trace = {
+          x: unpack(Y, 0),
+          y: unpack(Y, 1),
+          mode: 'markers',
+          marker: {
+            size: 6,
+            opacity: 0.7,
+            color: target,
+            colorscale: colorscale
+          },
+          text: text,
+          type: 'scatter'
         }
-      }
-      Plotly.newPlot(this.divPlot, data, layout, { responsive: true })
-      this.divPlot.on('plotly_selected', function (e) {
-        if (e && e.points && Array.isArray(e.points)) {
-          const selected = e.points.map(p => p.pointIndex)
-          const recordsSelected = recordsFiltered.filter((_, i) => selected.includes(i))
-          const keys = Object.keys(recordsSelected[0]).filter(key => key.length)
-          const values = recordsSelected.map(row => keys.map(k => row[k]))
-          let res = keys.join(',') + '\n'
-          values.forEach(v => { res += v.join(',') + '\n' })
-          const blob = new Blob([res], { type: 'text/plain;charset=utf-8' })
-          FileSaver.saveAs(blob, 'selection.csv')
+        const data = [trace]
+        const layout = {
+          title: params.method + '(2D)',
+          hovermode: 'closest',
+          height: 600,
+          margin: {
+            l: 0,
+            r: 0,
+            b: 0,
+            t: 30
+          }
         }
-      })
-    } else {
-      const trace = {
-        x: unpack(Y, 0),
-        y: unpack(Y, 1),
-        z: unpack(Y, 2),
-        mode: 'markers',
-        marker: {
-          size: 2,
-          opacity: 0.7,
-          color: target,
-          colorscale: colorscale
-        },
-        text: g && g.length ? g.map(el => '<b>' + el + '</b>') : null,
-        type: 'scatter3d'
-      }
-      const data = [trace]
-      const layout = {
-        title: params.method + '(3D)',
-        hovermode: 'closest',
-        height: 600,
-        margin: {
-          l: 0,
-          r: 0,
-          b: 0,
-          t: 30
+        Plotly.newPlot(this.divPlot, data, layout, { responsive: true })
+        this.divPlot.on('plotly_selected', function (e) {
+          if (e && e.points && Array.isArray(e.points)) {
+            const selected = e.points.map(p => p.pointIndex)
+            const recordsSelected = recordsFiltered.filter((_, i) => selected.includes(i))
+            const keys = Object.keys(recordsSelected[0]).filter(key => key.length)
+            const values = recordsSelected.map(row => keys.map(k => row[k]))
+            let res = keys.join(',') + '\n'
+            values.forEach(v => { res += v.join(',') + '\n' })
+            const blob = new Blob([res], { type: 'text/plain;charset=utf-8' })
+            FileSaver.saveAs(blob, 'selection.csv')
+          }
+        })
+      } else {
+        const trace = {
+          x: unpack(Y, 0),
+          y: unpack(Y, 1),
+          z: unpack(Y, 2),
+          mode: 'markers',
+          marker: {
+            size: 2,
+            opacity: 0.7,
+            color: target,
+            colorscale: colorscale
+          },
+          text: g && g.length ? g.map(el => '<b>' + el + '</b>') : null,
+          type: 'scatter3d'
         }
+        const data = [trace]
+        const layout = {
+          title: params.method + '(3D)',
+          hovermode: 'closest',
+          height: 600,
+          margin: {
+            l: 0,
+            r: 0,
+            b: 0,
+            t: 30
+          }
+        }
+        Plotly.newPlot(this.divPlot, data, layout, { responsive: true })
       }
-      Plotly.newPlot(this.divPlot, data, layout, { responsive: true })
     }
 
     // Plot pairs and parallel coordinated plot
@@ -235,7 +251,8 @@ module.exports = class Render {
     ]
 
     if (impMatrix) {
-      let data = [
+      console.log('[Vis] Rendering imp matrix:', impMatrix)
+      const data = [
         {
           z: impMatrix,
           x: featuresFiltered,
@@ -245,8 +262,8 @@ module.exports = class Render {
           hoverongaps: false
         }
       ]
-      let layout = {
-        title: 'Cross-variable importance (Autoencoder)',
+      const layout = {
+        title: 'Cross-variable importance',
         height: 600,
         margin: {
           l: 50,
@@ -265,6 +282,73 @@ module.exports = class Render {
         }
       }
       Plotly.newPlot(this.divMap, data, layout)
+
+      // Draw network
+
+      const max = Math.max(...([].concat(...impMatrix)))
+      const marginalImp = Array(impMatrix.length).fill(0)
+      impMatrix.forEach((imp, i) => {
+        imp.forEach((v, j) => { marginalImp[j] += v / (max > 0 ? max : 1) })
+      })
+
+      console.log('MI', marginalImp)
+
+      const nodes = new vis.DataSet(featuresFiltered.map((f, i) => ({
+        id: i,
+        label: f,
+        value: marginalImp[i] * 10,
+        group: (marginalImp[i] / (max > 0 ? max : 1) > 0.2) ? 'active' : 'passive'
+      })))
+
+      const edgesTemp = []
+      impMatrix.forEach((imp, i) => {
+        imp.forEach((v, j) => {
+          const val = v / (max > 0 ? max : 1)
+          if (v > max * 0.2) {
+            edgesTemp.push({
+              from: j,
+              to: i,
+              value: val,
+              color: { color: '#7F92CF', opacity: val }
+            })
+          }
+        })
+      })
+      console.log(edgesTemp)
+      const edges = new vis.DataSet(edgesTemp)
+
+      // create a network
+      var dat = {
+        nodes: nodes,
+        edges: edges
+      }
+      var options = {
+        nodes: {
+          shape: 'dot',
+          scaling: {
+            customScalingFunction: function (min, max, total, value) {
+              return value / total
+            },
+            min: 3,
+            max: 25
+          }
+        },
+        groups: {
+          active: {
+            shape: 'dot',
+            color: '#3030B7'
+          },
+          passive: {
+            shape: 'dot',
+            color: '#5E78CB'
+          }
+        }
+      }
+
+      this.divNet.style.width = '600px'
+      this.divNet.style.height = '600px'
+      const network = new vis.Network(this.divNet, dat, options)
+      console.log('[Vis] Network created:', typeof network)
     }
 
     if (corr) {

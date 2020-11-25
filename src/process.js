@@ -105,78 +105,82 @@ module.exports = class Process {
       console.log('[Vis] Embedding method:', params.method)
 
       let Y
-      if (params.method === 'PCA') {
-        console.log('[Vis] Fitting PCA')
-        const pca = new PCA(X)
-        Y = pca.predict(X, { 'nComponents': nDims}).to2DArray()
-      } else if (params.method === 'SOM') {
-        const som = new SOM(100, 100, { 'iterations': Math.round(params.steps / 10), 'fields': X[0].length})
-        som.train(X)
-        Y = som.predict(X)
-        if (nDims === 3) {
-          Y = Y.map(y => y.concat([0]))
-        }
-      } else if (params.method === 'UMAP') {
-        console.log('[Vis] Fitting UMAP')
-        const umap = new UMAP({ 'nComponents': nDims, 'nEpochs': params.steps })
-        umap.initializeFit(X)
-        for (let i = 0; i < params.steps; i++) {
-          umap.step()
-        }
-        Y = umap.getEmbedding()
-      } else if (params.method === 'Autoencoder') {
-        console.log('[Vis] Fitting Autoencoder')
-        // const ae = new Autoencoder({'nInputs': cols.length, 'nHidden': nDims, 'nLayers': 3, 'activation': 'tanh'})
-        const ae = new Autoencoder({
-          'encoder': [
-            {'nOut': 20, 'activation': 'tanh'},
-            {'nOut': nDims, 'activation': 'sigmoid'}
-          ],
-          'decoder': [
-            {'nOut': 20, 'activation': 'tanh'},
-            {'nOut': cols.length}
-          ]
-        })
-        ae.fit(X, {
-          'iterations': params.steps * 50,
-          'stepSize': 0.005,
-          'batchSize': 20,
-          'method': 'adam'
-        })
-        Y = ae.encode(X)
 
-        impMatrix = []
-
-        console.log('[Vis] Generate importance matrix with Autoencoder')
-        featuresFiltered.forEach((f, fi) => {
-          const impTemp = []
-          const Xr = []
-          X.forEach(x => Xr.push(x.slice(0)))
-          for (let i = Xr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1))
-            const x = Xr[i][fi]
-            Xr[i][fi] = Xr[j][fi]
-            Xr[j][fi] = x
+      // Projection
+      if (params.method !== 'None') {
+        if (params.method === 'PCA') {
+          console.log('[Vis] Fitting PCA')
+          const pca = new PCA(X)
+          Y = pca.predict(X, { 'nComponents': nDims}).to2DArray()
+        } else if (params.method === 'SOM') {
+          const som = new SOM(100, 100, { 'iterations': Math.round(params.steps / 10), 'fields': X[0].length})
+          som.train(X)
+          Y = som.predict(X)
+          if (nDims === 3) {
+            Y = Y.map(y => y.concat([0]))
           }
-          const Xp = ae.predict(Xr)
-          featuresFiltered.forEach((ff, ffi) => {
-            const mse = Xp.reduce((a, x, xi) => Math.pow(x[ffi] - X[xi][ffi], 2) + a, 0) / Xp.length
-            impTemp.push(mse)
+        } else if (params.method === 'UMAP') {
+          console.log('[Vis] Fitting UMAP')
+          const umap = new UMAP({ 'nComponents': nDims, 'nEpochs': params.steps })
+          umap.initializeFit(X)
+          for (let i = 0; i < params.steps; i++) {
+            umap.step()
+          }
+          Y = umap.getEmbedding()
+        } else if (params.method === 'Autoencoder') {
+          console.log('[Vis] Fitting Autoencoder')
+          // const ae = new Autoencoder({'nInputs': cols.length, 'nHidden': nDims, 'nLayers': 3, 'activation': 'tanh'})
+          const ae = new Autoencoder({
+            'encoder': [
+              {'nOut': 20, 'activation': 'tanh'},
+              {'nOut': nDims, 'activation': 'sigmoid'}
+            ],
+            'decoder': [
+              {'nOut': 20, 'activation': 'tanh'},
+              {'nOut': cols.length}
+            ]
           })
-          impMatrix.push(impTemp)
-        })
-        console.log('[Vis] Autoencoder importance matrix:', impMatrix)
-        impMatrix = new Matrix(impMatrix).scaleColumns().to2DArray()
-      } else {
-        console.log('[Vis] Fitting t-SNE')
-        const tsne = new TSNE({ 'epsilon': 10, 'dim': nDims })
-        tsne.initDataRaw(X)
-        const steps = params.steps || 100
-        for (let k = 0; k <= steps; k++) {
-          tsne.step()
+          ae.fit(X, {
+            'iterations': params.steps * 50,
+            'stepSize': 0.005,
+            'batchSize': 20,
+            'method': 'adam'
+          })
+          Y = ae.encode(X)
+
+          impMatrix = []
+
+          console.log('[Vis] Generate importance matrix with Autoencoder')
+          featuresFiltered.forEach((f, fi) => {
+            const impTemp = []
+            const Xr = []
+            X.forEach(x => Xr.push(x.slice(0)))
+            for (let i = Xr.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1))
+              const x = Xr[i][fi]
+              Xr[i][fi] = Xr[j][fi]
+              Xr[j][fi] = x
+            }
+            const Xp = ae.predict(Xr)
+            featuresFiltered.forEach((ff, ffi) => {
+              const mse = Xp.reduce((a, x, xi) => Math.pow(x[ffi] - X[xi][ffi], 2) + a, 0) / Xp.length
+              impTemp.push(mse)
+            })
+            impMatrix.push(impTemp)
+          })
+          console.log('[Vis] Autoencoder importance matrix:', impMatrix)
+          impMatrix = new Matrix(impMatrix).scaleColumns().to2DArray()
+        } else {
+          console.log('[Vis] Fitting t-SNE')
+          const tsne = new TSNE({ 'epsilon': 10, 'dim': nDims })
+          tsne.initDataRaw(X)
+          const steps = params.steps || 100
+          for (let k = 0; k <= steps; k++) {
+            tsne.step()
+          }
+          Y = tsne.getSolution()
         }
-        Y = tsne.getSolution()
-      }
+      } // End projection
 
       let target
       let colorscale
@@ -210,7 +214,7 @@ module.exports = class Process {
         }
       } else {
         console.log('[Vis] No target variable specified')
-        target = Array(Y.length).fill(0)
+        target = Array(X.length).fill(0)
         colorscale = [
           [0, '#8A8DA1'],
           [1, '#8A8DA1']
@@ -234,6 +238,22 @@ module.exports = class Process {
             impTemp.splice(i, 0, 0)
             return impTemp
           })
+        } else if (params.importance === 'Mutual Information') {
+          // impMatrix = []
+          // for (let i = 0; i < featuresFiltered.length; i++) {
+          //   console.log(`Calculating ${i} of ${featuresFiltered.length}`)
+          //   const impMatrixRow = []
+          //   impMatrix.push(impMatrixRow)
+          //   for (let j = 0; j < featuresFiltered.length; j++) {
+          //     if (i === j) {
+          //       impMatrixRow.push(0)
+          //     } else {
+          //       const x = X.map(row => row[i])
+          //       const y = X.map(row => row[j])
+          //       impMatrixRow.push(Funzo(x).map().joint(Funzo(y).map()).mi(2)) //)mid(x, y))
+          //     }
+          //   }
+          // }
         }
       }
 
