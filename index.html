@@ -3,11 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>Vis. Visualize high-dimensional data | StatSim</title>
+    <title>Visualize high-dimensional data | StatSim Vis</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <link type="text/css" rel="stylesheet" href="https://statsim.com/port/css/port.css" media="screen"/>
     <link rel="icon" type="image/png" href="https://statsim.com/app/images/favicon-32x32.png" sizes="32x32">
     <link rel="icon" type="image/png" href="https://statsim.com/app/images/favicon-16x16.png" sizes="16x16">
+    <link type="text/css" rel="stylesheet" href="https://statsim.com/assets/common.css" media="screen"/>
     <style>
       a { color: #3030B7 }
       .logo { width: 75px; padding: 0; margin: 8px 0 0 0}
@@ -21,14 +22,13 @@
   </head>
   <body>
 
-    <div class="grey-bar">
+    <div class="status-bar grey-bar">
       <div class="container">
         <div class="row">
-          <div class="col s11" style="font-size: 14px;">
-            <a href="https://statsim.com/">StatSim</a> → Vis
-          </div>
-          <div class="col s1" style="font-size: 13px; color: #AAA; text-align: right">
-            0.3.1
+          <div class="col s12" style="font-size: 14px;">
+            <div id="menu"></div>
+            <a href="https://statsim.com/">StatSim</a> → <b>Vis</b>
+            <span class="version">Version: 0.3.1</span>
           </div>
         </div>
       </div>
@@ -48,12 +48,11 @@
       <div class="container">
         <div class="row">
           <div class="col m12">
-            <h4>Visualize high-dimensional data online</h4>
+            <h1>Visualize high-dimensional data online</h1>
+            <h2>Explore CSV datasets using dimensionality reduction and feature importance methods</h2>
             <p>
-              Feature extraction is the process of reducing the number of variables (columns) in a dataset by obtaining a smaller representative set of variables using various methods of dimensionality reduction (<a href="https://en.wikipedia.org/wiki/Dimensionality_reduction">Wiki</a>). Try dimensionality reduction methods in the browser using Vis, a 100% free open-source tool for feature extraction and visualization.
-              Supported methods: <i>PCA, t-SNE, UMAP, SOM, Autoencoder</i>
+              Feature extraction is the process of reducing the number of variables (i.e., columns) in a dataset by obtaining a smaller representative set of features using dimensionality reduction methods (<a href="https://en.wikipedia.org/wiki/Dimensionality_reduction">Wiki</a>). You can apply dimensionality reduction to any tabular CSV dataset using StatSim Vis, a 100% free and open-source tool for feature extraction and visualization. It supports PCA, t-SNE, UMAP, SOM, and Autoencoders. To understand your data even better, try the feature importance method to know how strong the dependency between input variables and the target.
             </p>
-
             <small>
               All processing and visualization happens in your browser. We don't see, collect or sell data you explore <br> 
             </small>
@@ -68,6 +67,7 @@
     <script async defer src="https://buttons.github.io/buttons.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <script src="https://statsim.com/port/dist/port.js"></script>
+    <script src="https://statsim.com/assets/common.js"></script>
     <script>
       var port = new Port({
         portContainer: document.getElementById('port-container'),
