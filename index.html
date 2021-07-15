@@ -37,7 +37,6 @@
     <div class="container">
       <div class="row">
         <div class="col m12">
-          <img src="vis.png" class="logo" alt="StatSim.Vis">
         </div>
       </div>
       <div class="row">
@@ -53,6 +52,38 @@
             <p>
               Feature extraction is the process of reducing the number of variables (i.e., columns) in a dataset by obtaining a smaller representative set of features using dimensionality reduction methods (<a href="https://en.wikipedia.org/wiki/Dimensionality_reduction">Wiki</a>). You can apply dimensionality reduction to any tabular CSV dataset using StatSim Vis, a 100% free and open-source tool for feature extraction and visualization. It supports PCA, t-SNE, UMAP, SOM, and Autoencoders. To understand your data even better, try the feature importance method to know how strong the dependency between input variables and the target.
             </p>
+          </div>
+        </div>
+
+        <div class="row features">
+          <div class="col m4 feature">
+            <h3>
+              Dimensionality reduction
+            </h3>
+            <p>
+              In many cases, real-world datasets contain more than 2 or 3 variables (i.e., columns). For us humans, it's tough to analyze and reason in high dimensions. Computers work nicely with high-dimensional data, but sometimes we still need to get some bird-view over a dataset. Luckily various projections methods can map data with many variables to a low-dimensional space we understand.
+            </p>
+          </div>
+          <div class="col m4 feature">
+            <h3>
+              2D/3D view of a dataset
+            </h3>
+            <p>
+              All dimensionality reductions techniques support mapping from a high-dimensional space to two dimensions. That works for most datasets. In 2D mode, you can also select and save a data subset using the lasso tool: <img src="lasso.png" style="width:14px; height: auto;">. However, plotting data in three dimensions makes it possible to recognize patterns even better. You can rotate, zoom and then choose the most effective 3D to 2D projection.
+            </p>
+          </div>
+          <div class="col m4 feature">
+            <h3>
+              Feature importance
+            </h3>
+            <p>
+              Sometimes we are interested in a specific column of a dataset and how it depends on other variables. Let's call that column a target variable. Historically a correlation coefficient was used as a measure of such dependency. However, correlation works only with linear relationships and <a href="https://en.wikipedia.org/wiki/Correlation_and_dependence#/media/File:Correlation_examples2.svg">fails in many cases</a>. Feature importance relies on a more complex model under the hood. It estimates non-linear dependencies and variable interactions.
+            </p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col m12">
             <small>
               All processing and visualization happens in your browser. We don't see, collect or sell data you explore <br> 
             </small>
@@ -62,6 +93,8 @@
             </p>
           </div>
         </div>
+
+
       </div>
     </div>
     <script async defer src="https://buttons.github.io/buttons.js"></script>
